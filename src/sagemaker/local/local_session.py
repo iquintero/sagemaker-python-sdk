@@ -20,7 +20,8 @@ import urllib3
 from botocore.exceptions import ClientError
 
 from sagemaker.local.image import _SageMakerContainer
-from sagemaker.local.entities import _LocalEndpointConfig, _LocalEndpoint, _LocalModel, _LocalTrainingJob
+from sagemaker.local.entities import (_LocalEndpointConfig, _LocalEndpoint, _LocalModel,
+                                      _LocalTrainingJob, _LocalTransformJob)
 from sagemaker.session import Session
 from sagemaker.utils import get_config_value
 
@@ -38,6 +39,7 @@ class LocalSagemakerClient(object):
     """
 
     _training_jobs = {}
+    _transform_jobs = {}
     _models = {}
     _endpoint_configs = {}
     _endpoints = {}
@@ -49,10 +51,7 @@ class LocalSagemakerClient(object):
             sagemaker_session (sagemaker.session.Session): a session to use to read configurations
                 from, and use its boto client.
         """
-        self.serve_container = None
         self.sagemaker_session = sagemaker_session or LocalSession()
-        self.s3_model_artifacts = None
-        self.created_endpoint = False
 
     def create_training_job(self, TrainingJobName, AlgorithmSpecification, InputDataConfig, OutputDataConfig,
                             ResourceConfig, HyperParameters, *args, **kwargs):
@@ -89,6 +88,13 @@ class LocalSagemakerClient(object):
             raise ClientError(error_response, 'describe_training_job')
         else:
             return LocalSagemakerClient._training_jobs[TrainingJobName].describe()
+
+    def create_transform_job(self, TransformJobName, ModelName, TransformInput, TransformOutput,
+                             *args, **kwargs):
+        transform_job = _LocalTransformJob(TransformJobName, ModelName, self.sagemaker_session)
+        LocalSagemakerClient._training_jobs[TransformJobName] = transform_job
+        transform_job.start(TransformInput, TransformOutput, **kwargs)
+
 
     def create_model(self, ModelName, PrimaryContainer, *args, **kwargs):
         """Create a Local Model Object
@@ -128,7 +134,7 @@ class LocalSagemakerClient(object):
     def create_endpoint(self, EndpointName, EndpointConfigName):
         endpoint = _LocalEndpoint(EndpointName, EndpointConfigName, self.sagemaker_session)
         LocalSagemakerClient._endpoints[EndpointName] = endpoint
-        endpoint.serve(self.sagemaker_session)
+        endpoint.serve()
 
     def delete_endpoint(self, EndpointName):
         if EndpointName in LocalSagemakerClient._endpoints:
@@ -153,8 +159,14 @@ class LocalSagemakerRuntimeClient(object):
 
     def invoke_endpoint(self, Body, EndpointName, ContentType, Accept):
         url = "http://localhost:%s/invocations" % self.serving_port
+        headers = {
+            'Content-type': ContentType
+        }
+        if Accept is not None:
+            headers['Accept'] = Accept
+
         r = self.http.request('POST', url, body=Body, preload_content=False,
-                              headers={'Content-type': ContentType, 'Accept': Accept})
+                              headers=headers)
 
         return {'Body': r, 'ContentType': Accept}
 
