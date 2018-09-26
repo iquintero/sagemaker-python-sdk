@@ -76,17 +76,17 @@ class KNN(AmazonAlgorithmEstimatorBase):
             predictor_type (str): Required. Type of inference to use on the data's labels,
                 allowed values are 'classifier' and 'regressor'.
             dimension_reduction_type (str): Optional. Type of dimension reduction technique to use.
-                Valid values: “sign”, “fjlt”
+                Valid values: "sign", "fjlt"
             dimension_reduction_target (int): Optional. Target dimension to reduce to. Required when
                 dimension_reduction_type is specified.
             index_type (str): Optional. Type of index to use. Valid values are
-                “faiss.Flat”, “faiss.IVFFlat”, “faiss.IVFPQ”.
+                "faiss.Flat", "faiss.IVFFlat", "faiss.IVFPQ".
             index_metric(str): Optional. Distance metric to measure between points when finding nearest neighbors.
                 Valid values are "COSINE", "INNER_PRODUCT", "L2"
             faiss_index_ivf_nlists(str): Optional. Number of centroids to construct in the index if
-                index_type is “faiss.IVFFlat” or “faiss.IVFPQ”.
+                index_type is "faiss.IVFFlat" or "faiss.IVFPQ".
             faiss_index_pq_m(int): Optional. Number of vector sub-components to construct in the index,
-                if index_type is “faiss.IVFPQ”.
+                if index_type is "faiss.IVFPQ".
             **kwargs: base class keyword argument values.
         """
 
